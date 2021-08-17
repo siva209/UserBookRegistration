@@ -4,14 +4,14 @@ import java.time.LocalDateTime;
 
 import lombok.Data;
 @Data
-public class BookDto {
+public class UserDto {
 
 
 private String FirstName;
 private String LastName;
 private String Kyc;
 private String dataOfBirth;
-private String otp;
+private int otp;
 private String Email;
 private String Password;
 

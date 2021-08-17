@@ -3,25 +3,24 @@ package com.bridgelabz.bookstore.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import com.bridgelabz.bookstore.dto.BookDto;
 import com.bridgelabz.bookstore.dto.ForgotPwdDto;
 import com.bridgelabz.bookstore.dto.LoginDto;
 import com.bridgelabz.bookstore.dto.UpdatePwdDto;
 import com.bridgelabz.bookstore.dto.UpdateUserDto;
+import com.bridgelabz.bookstore.dto.UserDto;
 import com.bridgelabz.bookstore.exception.UserBookRegistrationException;
 import com.bridgelabz.bookstore.model.User;
 import com.bridgelabz.bookstore.repository.UserBookRepository;
 import com.bridgelabz.bookstore.response.Response;
 import com.bridgelabz.bookstore.util.Jms;
 import com.bridgelabz.bookstore.util.JwtToken;
-
 @Service
 public class UserBookServiceImpl implements IUserBookService{
 	
@@ -40,7 +39,7 @@ public class UserBookServiceImpl implements IUserBookService{
 	private Jms jms;
 
 	@Override
-	public Response registerBookDetails(BookDto bookDetailsDto) {
+	public Response registerBookDetails(UserDto bookDetailsDto) {
 		Optional<User> isUserPresent = userbookrepo.findAllByemail(bookDetailsDto.getEmail());
 		if (!isUserPresent.isPresent()) {
 			User user = modelmapper.map(bookDetailsDto, User.class);
@@ -49,8 +48,12 @@ public class UserBookServiceImpl implements IUserBookService{
 			user.setPurchaseDate(LocalDateTime.now());;
 			user.setExpiryDate(LocalDateTime.now());
 			user.setUpdatedDate(LocalDateTime.now());
+			Random random=new Random();
+			int otpNumber=random.nextInt(999999);
+			user.setOtp(otpNumber);
+			String.format("%06d", otpNumber);
 			userbookrepo.save(user);
-			String body="http://localhost:9090/verifyemail/"+jwt.jwtToken(user.getId());
+			String body="http://localhost:9091/verifyemail/"+jwt.jwtToken(user.getId());
 			System.out.println(body);
 			jms.sendEmail(user.getEmail(),"verification email",body);
 			return new Response("regitration sucess",user,201,"true");
@@ -98,7 +101,7 @@ public class UserBookServiceImpl implements IUserBookService{
 	
 
 	@Override
-	public Response updateUserById(Long id, UpdateUserDto dto) throws UserBookRegistrationException {
+	public Response updateUserById(String token,Long id, UpdateUserDto dto) throws UserBookRegistrationException {
 		Optional<User> isUserPresent = userbookrepo.findById(id);
 		if (isUserPresent.isPresent()) {
 			isUserPresent.get().setFirstName(dto.getFirstName());
@@ -135,6 +138,67 @@ public class UserBookServiceImpl implements IUserBookService{
 		
 }
 
-}
+	@Override
+	public Response sendotp(String token) {
+		long id=jwt.parseJWT(token);
+		Optional<User>isUserPresent = userbookrepo.findById(id);
+		if (isUserPresent.isPresent()) {
+			
+			String body = "OTP = " + isUserPresent.get().getOtp();
+			jms.sendEmail(isUserPresent.get().getEmail(),"verification email",body);
+			return new Response("Sucesssfully sent otp in mail",isUserPresent,200,"true");
+		} else {
+			throw new UserBookRegistrationException("User id is not present", HttpStatus.OK, null, "false");
+		}
+	}
+	
+	
+
+	@Override
+	public Response verifyOtp(String token, int otp) throws UserBookRegistrationException {
+		long id=jwt.parseJWT(token);
+		Optional<User> isUserPresent = userbookrepo.findById(id);
+		if (isUserPresent.isPresent()) {
+			if (isUserPresent.get().getOtp() == otp) {
+				return new Response("verify otp ",isUserPresent,200,"true");
+			}
+				else {
+					throw new UserBookRegistrationException("User id is not present", HttpStatus.OK, null, "false");
+				}
+		} else {
+			throw new UserBookRegistrationException("User id is not present", HttpStatus.OK, null, "false");
+		}
+	}
+	
+
+
+	@Override
+	public Response delete(String token, Long id) {
+		long Id=jwt.parseJWT(token);
+		Optional<User> isUserPresent = userbookrepo.findById(id);
+		if (isUserPresent.isPresent()) {
+			userbookrepo.delete(isUserPresent.get());
+			return new Response("User Data Deleted successful  ",isUserPresent,200,"true");
+		} else {
+			throw new UserBookRegistrationException("User id is not present", HttpStatus.OK, isUserPresent.get(), "false");
+		}
+	}
+
+	@Override
+	public User check(String token) {
+		long id=jwt.parseJWT(token);
+		
+		User user=userbookrepo.isIdExists(id).orElseThrow(() -> new UserBookRegistrationException("user not exists",HttpStatus.OK,id,"false"));
+		user.setVerifyEmail(true);
+		userbookrepo.save(user);
+		return user;
+	}
+	}
+	
+
+
+	
+	
+	
 
 	

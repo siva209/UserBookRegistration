@@ -21,6 +21,7 @@ public class User {
 	private String LastName;
 	private String DataOfBirth;
 	private String Kyc;
+	private int Otp;
 	private String email;
 	private String Password;
 	private LocalDateTime RegisteredDate;

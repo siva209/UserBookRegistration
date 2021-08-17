@@ -4,14 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bridgelabz.bookstore.dto.BookDto;
+import com.bridgelabz.bookstore.dto.UserDto;
+import com.bridgelabz.bookstore.exception.UserBookRegistrationException;
 import com.bridgelabz.bookstore.dto.ForgotPwdDto;
 import com.bridgelabz.bookstore.dto.LoginDto;
 import com.bridgelabz.bookstore.dto.UpdatePwdDto;
@@ -21,6 +24,7 @@ import com.bridgelabz.bookstore.response.Response;
 import com.bridgelabz.bookstore.service.IUserBookService;
 
 
+
 @RestController
 public class UserBookController {
 	
@@ -28,7 +32,7 @@ public class UserBookController {
 	private IUserBookService userbookService;
 	
 	@PostMapping("/registerBook")
-	public ResponseEntity<Response>registerBookDetails(@RequestBody BookDto bookDetails,BindingResult result){
+	public ResponseEntity<Response>registerBookDetails(@RequestBody UserDto bookDetails,BindingResult result){
 		Response response=userbookService.registerBookDetails(bookDetails);
 		return new ResponseEntity<Response>(response,HttpStatus.OK);
 	}
@@ -56,9 +60,9 @@ public class UserBookController {
 		 User user=userbookService.getUserById(id);
 			return new ResponseEntity<Response>(new Response("welcome",userbookService.getUserById(id),200,"true"),HttpStatus.OK);
 		}
-	@PutMapping("/update/{id}")
-	public ResponseEntity<Response> updateUserById(@PathVariable Long id, @RequestBody  UpdateUserDto dto) {
-		Response respDTO = userbookService.updateUserById(id, dto);
+	@PutMapping("/update/{id}/{token}")
+	public ResponseEntity<Response> updateUserById(@PathVariable Long id,@PathVariable  String token, @RequestBody  UpdateUserDto dto) {
+		Response respDTO = userbookService.updateUserById(token,id, dto);
 		return new ResponseEntity<Response>(respDTO,HttpStatus.OK);
 	}
 	@PostMapping("/forgotpassword")
@@ -70,6 +74,29 @@ public class UserBookController {
 	public ResponseEntity<Response> updatePassword(@RequestBody UpdatePwdDto pwddto,BindingResult result)
 	{
 		return new ResponseEntity<Response>(new Response("password updated successfully", userbookService.updatepwd(pwddto),200,"true"),HttpStatus.OK);
+	}
+	
+	@GetMapping("/sendotp/{token}")
+	public Response sendotp(@PathVariable String token) {
+		return userbookService.sendotp(token);
+	}
+	
+
+	@GetMapping("/verifyotp/{token}")
+	public Response verifyotp(@PathVariable String token, @RequestParam int otp) throws UserBookRegistrationException {
+		return userbookService.verifyOtp(token, otp);
+	}
+	
+	@GetMapping("/checkuser/{token}")
+	public User check(@PathVariable String token) {
+		return userbookService.check(token);
+	}
+
+	
+	@DeleteMapping("/deleteuser/{token}/{id}")
+	public ResponseEntity<Response> deleteuser(@PathVariable String token, @PathVariable Long id) {
+		Response respDTO = userbookService.delete(token, id);
+		return new ResponseEntity<Response>(respDTO, HttpStatus.OK);
 	}
 	}
 
