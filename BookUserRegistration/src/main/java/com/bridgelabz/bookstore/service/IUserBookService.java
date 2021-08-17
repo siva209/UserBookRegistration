@@ -25,7 +25,8 @@ public interface IUserBookService {
     public Response verifyOtp(String token, int otp) throws UserBookRegistrationException;
     public Response delete(String token, Long id);
     public User check(String token);
-     
+    public Response purchaseBook(String token);
+    public Response expiry(String token);
 
    
 

@@ -98,7 +98,18 @@ public class UserBookController {
 		Response respDTO = userbookService.delete(token, id);
 		return new ResponseEntity<Response>(respDTO, HttpStatus.OK);
 	}
+	@GetMapping("/purchase/{token}")
+	public ResponseEntity<Response>purchaseBook(@PathVariable String token){
+		Response respDTO = userbookService.purchaseBook(token);
+		return new ResponseEntity<Response>(respDTO, HttpStatus.OK);
 	}
+	@GetMapping("/expiry/{token}")
+	public ResponseEntity<Response>expiry(@PathVariable String token){
+		Response respDTO = userbookService.expiry(token);
+		return new ResponseEntity<Response>(respDTO, HttpStatus.OK);
+	
+	}
+}
 
 
 

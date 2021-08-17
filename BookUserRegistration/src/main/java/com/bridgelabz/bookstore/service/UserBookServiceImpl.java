@@ -45,8 +45,6 @@ public class UserBookServiceImpl implements IUserBookService{
 			User user = modelmapper.map(bookDetailsDto, User.class);
 			user.setPassword(pwdencoder.encode(user.getPassword()));
 			user.setRegisteredDate(LocalDateTime.now());
-			user.setPurchaseDate(LocalDateTime.now());;
-			user.setExpiryDate(LocalDateTime.now());
 			user.setUpdatedDate(LocalDateTime.now());
 			Random random=new Random();
 			int otpNumber=random.nextInt(999999);
@@ -193,7 +191,49 @@ public class UserBookServiceImpl implements IUserBookService{
 		userbookrepo.save(user);
 		return user;
 	}
-	}
+
+	@Override
+	public Response purchaseBook(String token) {
+		long Id=jwt.parseJWT(token);
+		Optional<User>isUserPresent=userbookrepo.findById(Id);
+		if(isUserPresent.isPresent()) {
+			LocalDateTime todayDate=LocalDateTime.now();
+			isUserPresent.get().setPurchaseDate(LocalDateTime.now());
+			isUserPresent.get().setExpiryDate(todayDate.plusYears(1));
+			String body="Dear User You have succesfully purchased";
+			jms.sendEmail(isUserPresent.get().getEmail(),"succesfullypurchaes ",body);
+			userbookrepo.save(isUserPresent.get());
+			return new Response("User was purchase is succesfully","ExpiryDate:"+isUserPresent.get().getExpiryDate(),200,"true");
+		}
+		 else {
+				throw new UserBookRegistrationException("User id is not present", HttpStatus.OK, isUserPresent.get(), "false");
+			}
+		}
+
+	@Override
+	public Response expiry(String token) {
+		long Id=jwt.parseJWT(token);
+		Optional<User>isUserPresent=userbookrepo.findById(Id);
+		if(isUserPresent.isPresent()) {
+			LocalDateTime today=LocalDateTime.now();
+			if(today.equals(isUserPresent.get().getExpiryDate())) {
+				String body="Dear User your purchase of the book is gettin gexpired,Please Subscribe to keep reading book";
+				System.out.println(body);
+				jms.sendEmail(isUserPresent.get().getEmail(),"Remainder of purchase is gettingexpired ",body);
+				return new Response("Sending  mail to Remainder  ",isUserPresent.get().getFirstName(),200,"true");
+			}
+			return new Response("Sending  mail to Remainder  ",isUserPresent.get().getFirstName(),200,"true");
+		}
+			
+		else {
+					throw new UserBookRegistrationException("User id is not present", HttpStatus.OK, isUserPresent.get(), "false");
+			 }
+	
+	
+}
+}	
+	
+	
 	
 
 
