@@ -53,7 +53,7 @@ public class UserBookServiceImpl implements IUserBookService{
 			user.setOtp(otpNumber);
 			String.format("%06d", otpNumber);
 			userbookrepo.save(user);
-			String body="http://localhost:9091/verifyemail/"+jwt.jwtToken(user.getId());
+			String body="http://localhost:9091/checkuser/"+jwt.jwtToken(user.getId());
 			System.out.println(body);
 			jms.sendEmail(user.getEmail(),"verification email",body);
 			return new Response("regitration sucess",user,201,"true");
